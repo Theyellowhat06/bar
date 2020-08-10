@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "168630220756",
+    "firebase_url": "https://bar-app-dcf03.firebaseio.com",
+    "project_id": "bar-app-dcf03",
+    "storage_bucket": "bar-app-dcf03.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:168630220756:android:550815546d34bc9f64c841",
+        "android_client_info": {
+          "package_name": "mn.yellowfox.bar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "168630220756-ia5hvl8absjm87hom91jls9dcipr6nqh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "mn.yellowfox.bar",
+            "certificate_hash": "d940824cb39641d73eeff73c00bbd5c48099bd8e"
+          }
+        },
+        {
+          "client_id": "168630220756-kebj793oc6aafm4rp3avravd49ng9e1j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXogc1e-30sdEUUOyb1STHFdrdlyprxH8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "168630220756-kebj793oc6aafm4rp3avravd49ng9e1j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
