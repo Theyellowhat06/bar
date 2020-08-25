@@ -6,8 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'main.dart';
-import 'User.dart';
-import 'dashboard.dart';
+import 'forgetPasswordFinish.dart';
 
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -56,8 +55,7 @@ class _ForgetPassword extends State<ForgetPassword>{
     var message = jsonDecode(response.body);
     await pr.hide();
     if(message == 'Update Successfully.'){
-      //Navigator.push(context, MaterialPageRoute(builder: (context) => Dashboard()));
-      Navigator.pop(context);
+      Navigator.push(context, MaterialPageRoute(builder: (context) => Finish()));
     }else{
       _showDialog("Алдаа гарлаа.");
       _count--;
@@ -107,6 +105,7 @@ class _ForgetPassword extends State<ForgetPassword>{
         codeSent: smsCodeSent,
         codeAutoRetrievalTimeout: autoRetrieve,
       );
+      //print(verificationId);
     }else{
       _showDialog("Бүртгэлгүй утасны дугаар байна.");
       _count--;
@@ -168,6 +167,14 @@ class _ForgetPassword extends State<ForgetPassword>{
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
             color: Colors.white,
+          ),
+          Column(
+            children: <Widget>[
+              SizedBox(height: 40,),
+              Image(
+                image: AssetImage("assets/logo_grey.png"),
+              ),
+            ],
           ),
           PageView(
             physics:new NeverScrollableScrollPhysics(),

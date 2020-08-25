@@ -8,10 +8,12 @@ import 'package:flutter/material.dart';
 import 'main.dart';
 import 'notif.dart';
 import 'global_functions.dart';
+import 'updateInfo.dart';
 
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 String bs64;
 
@@ -29,7 +31,6 @@ class _Profile extends State<Profile>{
     http.post("https://duline.mn/image.php", body: {
       "image": bs64,
       "name": fileName,
-      "phone": usr.phone,
     }).then((res) {
       print(res.statusCode);
     }).catchError((err) {
@@ -69,14 +70,18 @@ class _Profile extends State<Profile>{
           Center(
             child: Stack(
               children: <Widget>[
-                Container(
+                Image(
+                  image: AssetImage("assets/account.png"),
+                  width: 150,
+                ),
+                /*Container(
                   width: 150,
                   height: 150,
                   decoration: BoxDecoration(
                     color: colorCyan,
                     shape: BoxShape.circle,
                   ),
-                ),
+                ),*/
                 Positioned(
                   left: 5,
                   top: 5,
@@ -109,19 +114,29 @@ class _Profile extends State<Profile>{
             ),
           ),
           SizedBox(height: 20,),
-          Center(
-            child: Text("ID: ${usr.id}", style: TextStyle(color: Colors.white),),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text("ID: ${usr.id}", style: TextStyle(color: Colors.white),),
+              SizedBox(width: 20,),
+              SvgPicture.asset("assets/svg/star.svg", width: 20, color: colorStar,),
+              SizedBox(width: 5,),
+              Text(usr.rate, style: TextStyle(color: Colors.white),)
+            ],
           ),
           SizedBox(height: 20,),
           Center(
             child: Text("${usr.ovog} ${usr.ner}", style: TextStyle(color: Colors.white, fontSize: 18),),
           ),
           SizedBox(height: 20,),
-          _info(usr.bornDate == null ? "" : usr.bornDate, Icon(Icons.date_range, color: colorCyan,)),
-          _info(usr.phone == null ? "" : usr.phone, Icon(Icons.phone, color: colorCyan,)),
-          _info(usr.sex == null ? "" : usr.sex, Icon(Icons.accessibility_new, color: colorCyan,)),
-          _info(usr.address == null ? "Хаяг" : usr.address, Icon(Icons.location_on, color: colorCyan,)),
-          _info(usr.bank == '0' ? "Дансны мэдээлэл" : usr.bank, Icon(Icons.credit_card, color: colorCyan,)),
+          _info(usr.bornDate == null ? "" : usr.bornDate, Icons.date_range, "Төрсөн өдөр", usr.bornDate),
+          _info(usr.phone == null ? "" : usr.phone, Icons.phone, "Утасны дугуур", usr.phone),
+          ListTile(
+            leading: Icon(Icons.accessibility_new, color: colorCyan,),
+            title: Text(usr.sex == null ? "" : usr.sex, style: TextStyle(color: Colors.white),),
+          ),
+          _info(usr.address == null ? "Хаяг" : usr.address, Icons.location_on, "Хаяг", usr.address),
+          _info(usr.bank == '0' ? "Дансны мэдээлэл" : usr.bank, Icons.credit_card, "Дансны мэдээлэл", usr.bank),
           SizedBox(height: 20,),
           Container(
             height: 1,
@@ -147,13 +162,13 @@ class _Profile extends State<Profile>{
     );
   }
 
-  InkWell _info(String txt, Icon icon){
+  InkWell _info(String txt, IconData icon, String title, String value){
     return InkWell(
       onTap: (){
-
+        Navigator.push(context, MaterialPageRoute(builder: (context) => UpdateInfo(title: title, value: value, icon: icon,)));
       },
       child: ListTile(
-        leading: icon,
+        leading: Icon(icon, color: colorCyan,),
         title: Text(txt, style: TextStyle(color: Colors.white),),
         trailing: Icon(Icons.arrow_forward_ios, color: Colors.grey,),
       ),

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'main.dart';
 import 'User.dart';
 import 'dashboard.dart';
+import 'camera.dart';
 
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -46,7 +47,7 @@ class _SignUp extends State<SignUp>{
     var message = jsonDecode(response.body);
     if(message == "Data Successfully Submitted."){
       usr = User('None', ovog, ner, phone, address, date, sex, '0', '0', '0', '0', '0');
-      Navigator.push(context, MaterialPageRoute(builder: (context) => Dashboard()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => CameraApp()));
     }else{
       _showDialog("Алдаа гарлаа.");
       _count--;
@@ -73,7 +74,7 @@ class _SignUp extends State<SignUp>{
     var response = await http.post(url, body: json.encode(ph));
     var mss = json.decode(response.body);
     await pr.hide();
-    if(mss == null){
+    if(mss != null){
       _controller.nextPage(duration: _dura, curve: _curve);
       final PhoneCodeAutoRetrievalTimeout autoRetrieve = (String verId){
         this.verificationId = verId;
@@ -159,6 +160,14 @@ class _SignUp extends State<SignUp>{
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
             color: Colors.white,
+          ),
+          Column(
+            children: <Widget>[
+              SizedBox(height: 40,),
+              Image(
+                image: AssetImage("assets/logo_grey.png"),
+              ),
+            ],
           ),
           PageView(
             physics:new NeverScrollableScrollPhysics(),

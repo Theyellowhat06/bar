@@ -10,10 +10,16 @@ import 'dashboard.dart';
 import 'User.dart';
 import 'profile.dart';
 import 'forgetPassword.dart';
+import 'forgetPasswordFinish.dart';
+import 'camera.dart';
+import 'splash.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:location/location.dart';
+import 'package:flushbar/flushbar.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
@@ -24,7 +30,7 @@ void main() {
   runApp(MyApp());
 }
 
-const Color colorDarkBlue = Color(0xff111515), colorLowBlue = Color(0xff141E28) , colorCyan = Color(0xff21C3EC);
+const Color colorDarkBlue = Color(0xff111515), colorLowBlue = Color(0xff141E28), colorCyan = Color(0xff21C3EC), colorStar = Color(0xffffde3b);
 User usr;
 
 class MyApp extends StatelessWidget {
@@ -43,13 +49,16 @@ class MyApp extends StatelessWidget {
             color: Colors.white,
           ),
         ),
+        fontFamily: "Roboto",
         textTheme: TextTheme(
 
         ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       //home: Profile(),
-      home: MyHomePage(),
+      home: Splash(),
+      //home: Finish(),
+      //home: Dashboard(),
     );
   }
 }
@@ -62,7 +71,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+  Location location = new Location();
   String _phone, _pss;
+  bool _canLogin = false;
 
   @override
   void initState() {
@@ -72,8 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
       onMessage: (Map<String, dynamic> message) async {
         var _msg = message["notification"];
         //notifGetter();
-        //if(_msg["title"] == "Таны хүсэлтийг хүлээн авлаа.") _flashbar(_msg["title"], _msg["body"], false);
-        //else _flashbar(_msg["title"], _msg["body"], true);
+        _flashbar(_msg["title"], _msg["body"], false);
       },
       onLaunch: (Map<String, dynamic> message) async {
         print("onLaunch: $message");
@@ -83,8 +93,65 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
+  void _flashbar(String title, String body, bool withButton){
+    Flushbar(
+      flushbarPosition: FlushbarPosition.TOP,
+      duration:  Duration(seconds: 4),
+      backgroundColor: Colors.white,
 
-  Future userLogin() async{
+      titleText: Text(
+        title,
+        style: TextStyle(
+            fontWeight: FontWeight.bold, fontFamily: "ShadowsIntoLightTwo"),
+      ),
+      messageText: Column(
+        children: <Widget>[
+          Text(
+            body,
+            style: TextStyle(fontFamily: "ShadowsIntoLightTwo"),
+          ),
+          if(withButton)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                MaterialButton(
+                  child: Text("Хүлээн авах", style: TextStyle(color: Colors.green),),
+                  onPressed: (){
+                    //deleteNotif(1, notifs[notifs.length - 1].id, notifs[notifs.length - 1].post_id, notifs.length - 1);
+                    //sendnotif(notifs[notifs.length - 1].req_id);
+                  },
+                ),
+                SizedBox(width: 100,),
+                MaterialButton(
+                  child: Text("Татгалзах", style: TextStyle(color: Colors.red),),
+                  onPressed: (){
+                    //deleteNotif(0, notifs[notifs.length - 1].id, notifs[notifs.length - 1].post_id, notifs.length - 1);
+                  },
+                )
+              ],
+            ),
+        ],
+      ),
+      boxShadows: [BoxShadow(color: Colors.black26, offset: Offset(0.0, 2.0), blurRadius: 3.0)],
+    )..show(context);
+  }
+  Future _updateinfo() async{
+    LocationData _locationResult = await location.getLocation();
+    var url = "https://duline.mn/updatemypost.php";
+    var data = {
+      'usr': 'uyf017',
+      'pss': 'g6c51',
+      'id' : usr.id,
+      'lat' : _locationResult.latitude.toString(),
+      'lng' : _locationResult.longitude.toString(),
+      'phone' : usr.phone,
+      'address' : usr.address,
+      'born' : usr.bornDate,
+      'rate' : usr.rate,
+    };
+    await http.post(url, body: json.encode(data));
+  }
+  Future<bool> userLogin() async{
     final ProgressDialog pr = ProgressDialog(context);
     pr.style(
         message: 'Түр хүлээн үү...',
@@ -103,7 +170,6 @@ class _MyHomePageState extends State<MyHomePage> {
     var data = {'phone': _phone, 'pass' : _pss};
     var response = await http.post(url, body: json.encode(data));
     var message = jsonDecode(response.body);
-
     if(message == 'Login Matched')
     {
       url = "https://duline.mn/usr_control.php";
@@ -111,21 +177,6 @@ class _MyHomePageState extends State<MyHomePage> {
       response = await http.post(url, body: json.encode(ph));
       var jsonData = json.decode(response.body);
       var u = jsonData;
-      print(u);
-      /*id = u["id"].toString();
-      ovog = u["ovog"];
-      ner = u["ner"];
-      phone = u["phone"];
-      bank = u["bank"];
-      type = u["type"];
-      age = u["age"];
-      sex = u["sex"];
-      usr_id = u["id"].toString();
-      image = usr_id + ".jpg";
-      rate = u["rate"];
-      working = u["working"];
-      review = u["review"].toString();
-      id2 = u["id2"];*/
       usr = User(u["id"].toString(), u["ovog"], u["ner"], u["phone"], u["address"], u["born"], u["sex"], u["amount"], u["bank"], u["rate"], u["review"], u["id2"]);
       var res = await http.get(
         "https://duline.mn/images/${usr.id}.jpg?=" + DateTime.now().toString(),
@@ -136,100 +187,115 @@ class _MyHomePageState extends State<MyHomePage> {
           print(bs64);
         });
       }
+      print(jsonData);
       await pr.hide();
       Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => Dashboard())
       );
+      _updateinfo();
     }else{
       await pr.hide();
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: new Text(message),
-            actions: <Widget>[
-              FlatButton(
-                child: new Text("Хаах"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );}
-  }
-  final LocalAuthentication auth = LocalAuthentication();
-  bool _canCheckBiometrics;
-  List<BiometricType> _availableBiometrics;
-  String _authorized = 'Not Authorized';
-  bool _isAuthenticating = false;
-
-  Future<void> _checkBiometrics() async {
-    bool canCheckBiometrics;
-    try {
-      canCheckBiometrics = await auth.canCheckBiometrics;
-    } on PlatformException catch (e) {
-      print(e);
+      _showDialog(message);
     }
-    if (!mounted) return;
-
-    setState(() {
-      _canCheckBiometrics = canCheckBiometrics;
-    });
-  }
-
-  Future<void> _getAvailableBiometrics() async {
-    List<BiometricType> availableBiometrics;
-    try {
-      availableBiometrics = await auth.getAvailableBiometrics();
-    } on PlatformException catch (e) {
-      print(e);
-    }
-    if (!mounted) return;
-
-    setState(() {
-      _availableBiometrics = availableBiometrics;
-    });
-  }
-
-  Future<void> _authenticate() async {
-    bool authenticated = false;
-    try {
-      setState(() {
-        _isAuthenticating = true;
-        _authorized = 'Authenticating';
-      });
-      authenticated = await auth.authenticateWithBiometrics(
-          localizedReason: 'Scan your fingerprint to authenticate',
-          useErrorDialogs: true,
-          stickyAuth: true);
-      setState(() {
-        _isAuthenticating = false;
-        _authorized = 'Authenticating';
-      });
-    } on PlatformException catch (e) {
-      print(e);
-    }
-    if (!mounted) return;
-
-    final String message = authenticated ? 'Authorized' : 'Not Authorized';
-    setState(() {
-      _authorized = message;
-    });
   }
   Future _fingerprint() async {
     var localAuth = LocalAuthentication();
     bool didAuthenticate =
     await localAuth.authenticateWithBiometrics(
-        localizedReason: 'Please authenticate to show account balance');
+        localizedReason: 'Хурууны хээгээ уншуулна уу.');
     print(didAuthenticate);
+    if(didAuthenticate){
+      final ProgressDialog pr = ProgressDialog(context);
+      pr.style(
+          message: 'Түр хүлээн үү...',
+          borderRadius: 10.0,
+          backgroundColor: colorDarkBlue,
+          progressWidget: CircularProgressIndicator(),
+          elevation: 10.0,
+          insetAnimCurve: Curves.easeInOut,
+          progressTextStyle: TextStyle(
+              color: Colors.white, fontSize: 13.0, fontWeight: FontWeight.w400),
+          messageTextStyle: TextStyle(
+              color: Colors.white, fontSize: 19.0, fontWeight: FontWeight.w600)
+      );
+      await pr.show();
+      await _get();
+      if(_canLogin){
+        var url = 'https://duline.mn/usrloggin.php';
+        var data = {'phone': _phone, 'pass' : _pss};
+        var response = await http.post(url, body: json.encode(data));
+        var message = jsonDecode(response.body);
+
+        if(message == 'Login Matched')
+        {
+          await _save(_phone);
+        }else{
+          await _read();
+        }
+        url = "https://duline.mn/usr_control.php";
+        var ph = {'phone': _phone};
+        response = await http.post(url, body: json.encode(ph));
+        var jsonData = json.decode(response.body);
+        var u = jsonData;
+        usr = User(u["id"].toString(), u["ovog"], u["ner"], u["phone"], u["address"], u["born"], u["sex"], u["amount"], u["bank"], u["rate"], u["review"], u["id2"]);
+        var res = await http.get(
+          "https://duline.mn/images/${usr.id}.jpg?=" + DateTime.now().toString(),
+        );
+        if (mounted) {
+          setState(() {
+            bs64 = base64.encode(res.bodyBytes);
+            print(bs64);
+          });
+        }
+        await pr.hide();
+        Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Dashboard())
+        );
+        _updateinfo();
+      }else{
+        var url = 'https://duline.mn/usrloggin.php';
+        var data = {'phone': _phone, 'pass' : _pss};
+        var response = await http.post(url, body: json.encode(data));
+        var message = jsonDecode(response.body);
+
+        if(message == 'Login Matched')
+        {
+          url = "https://duline.mn/usr_control.php";
+          var ph = {'phone': _phone};
+          response = await http.post(url, body: json.encode(ph));
+          var jsonData = json.decode(response.body);
+          var u = jsonData;
+          usr = User(u["id"].toString(), u["ovog"], u["ner"], u["phone"], u["address"], u["born"], u["sex"], u["amount"], u["bank"], u["rate"], u["review"], u["id2"]);
+          var res = await http.get(
+            "https://duline.mn/images/${usr.id}.jpg?=" + DateTime.now().toString(),
+          );
+          if (mounted) {
+            setState(() {
+              bs64 = base64.encode(res.bodyBytes);
+              print(bs64);
+            });
+          }
+          await _save(_phone);
+          await pr.hide();
+          Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => Dashboard())
+          );
+          _updateinfo();
+        }else{
+          await pr.hide();
+          _showDialog("Бүртгэлтэй хэргэлэч олдсонгүй");
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -239,11 +305,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 Container(
                   height: MediaQuery.of(context).size.height / 2 - 40,
                   child: Center(
-                    child: Container(
-                      height: 200,
-                      width: 400,
-                      color: colorCyan,
-                    ),
+                    child: Image(
+                      width: 150,
+                      image: AssetImage("assets/logo2@300x.png"),
+                    )
                   ),
                 ),
                 TextFormField(
@@ -253,13 +318,13 @@ class _MyHomePageState extends State<MyHomePage> {
                     });
                   },
                   keyboardType: TextInputType.number,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: colorDarkBlue),
                   decoration: InputDecoration(
                       hintText: "Утасны дугаар",
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: colorDarkBlue),
                       enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                      ) ,
+                        borderSide: BorderSide(color: colorDarkBlue),
+                      ),
                   ),
                 ),
                 SizedBox(height: 30,),
@@ -270,12 +335,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     });
                   },
                   obscureText: true,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: colorDarkBlue),
                   decoration: InputDecoration(
                       hintText: "Нууц үг",
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: colorDarkBlue),
                       enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
+                        borderSide: BorderSide(color: colorDarkBlue),
                       ),
                   ),
                 ),
@@ -292,12 +357,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: <Widget>[
                     ButtonTheme(
                       height: 50,
-                      minWidth: 240,
+                      minWidth: 200,
                       child: RaisedButton(
                         onPressed: (){
                           userLogin();
                         },
-                        color: colorCyan,
+                        color: colorDarkBlue,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5)
                         ),
@@ -322,13 +387,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     InkWell(
                       onTap: (){
                         _fingerprint();
+                        //_read();
                       },
                       child: Container(
                         height: 50,
                         width: 60,
-                        child: Icon(Icons.fingerprint, color: colorDarkBlue, size: 40,),
+                        child: Icon(Icons.fingerprint, color: Colors.white, size: 40,),
                         decoration: BoxDecoration(
-                          color: colorCyan,
+                          color: colorDarkBlue,
                           borderRadius: BorderRadius.circular(5),
                         ),
                       ),
@@ -343,6 +409,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 SizedBox(height: 20,),
                 FlatButton(
                   onPressed: (){
+                    //Navigator.push(context, MaterialPageRoute(builder: (context) => CameraApp()));
                     Navigator.push(context, MaterialPageRoute(builder: (context) => SignUp()));
                   },
                   child: Text("Бүртгүүлэх", style: TextStyle(color: colorCyan),),
@@ -352,6 +419,49 @@ class _MyHomePageState extends State<MyHomePage> {
           )
         ),
       ),
+    );
+  }
+  _get() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'phone';
+    if(prefs.getString(key) == null){
+      _canLogin = false;
+    }else{
+      _canLogin = true;
+    }
+  }
+  _read() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'phone';
+    final value = prefs.getString(key);
+    print('read: $value');
+    _phone = value;
+  }
+
+  _save(String phone) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'phone';
+    final value = phone;
+    prefs.setString(key, value);
+    print('saved $value');
+  }
+  _showDialog(String txt) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text(txt, style: TextStyle(color: Colors.white),),
+          backgroundColor: colorDarkBlue,
+          actions: <Widget>[
+            FlatButton(
+              child: new Text("Хаах"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
